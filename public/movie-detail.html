@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影详情 - 家庭电影网站</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🎬 家庭电影</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">首页</a>
+                <a href="/movies.html" class="nav-link">电影库</a>
+                <a href="/user.html" class="nav-link" id="userLink" style="display:none;">个人中心</a>
+                <a href="/admin.html" class="nav-link" id="adminLink" style="display:none;">管理后台</a>
+                <a href="/login.html" class="nav-link" id="loginLink">登录</a>
+                <button class="btn btn-primary" id="logoutBtn" style="display:none;" onclick="logout()">退出</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div id="movieDetail" class="movie-detail"></div>
+        
+        <!-- 评论区域 -->
+        <section class="section">
+            <h2>💬 评论</h2>
+            <div id="commentForm" style="display:none;">
+                <div class="rating-input">
+                    <label>评分：</label>
+                    <select id="ratingSelect">
+                        <option value="5">5星</option>
+                        <option value="4">4星</option>
+                        <option value="3">3星</option>
+                        <option value="2">2星</option>
+                        <option value="1">1星</option>
+                    </select>
+                </div>
+                <textarea id="commentText" placeholder="写下你的评论..."></textarea>
+                <button class="btn btn-primary" onclick="submitComment()">提交评论</button>
+            </div>
+            <div id="commentsList"></div>
+        </section>
+
+        <!-- 推荐电影 -->
+        <section class="section">
+            <h2>🎯 推荐影片</h2>
+            <div class="movie-grid" id="recommendations"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 家庭电影网站. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/movie-detail.js"></script>
+</body>
+</html>
+

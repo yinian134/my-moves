@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影库 - 家庭电影网站</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🎬 家庭电影</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">首页</a>
+                <a href="/movies.html" class="nav-link active">电影库</a>
+                <a href="/user.html" class="nav-link" id="userLink" style="display:none;">个人中心</a>
+                <a href="/admin.html" class="nav-link" id="adminLink" style="display:none;">管理后台</a>
+                <a href="/login.html" class="nav-link" id="loginLink">登录</a>
+                <button class="btn btn-primary" id="logoutBtn" style="display:none;" onclick="logout()">退出</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>电影库</h1>
+            <p>浏览所有电影，找到你喜欢的影片</p>
+        </div>
+
+        <section class="filter-section">
+            <input type="text" id="searchInput" placeholder="搜索电影..." class="search-input">
+            <select id="genreFilter">
+                <option value="">全部类型</option>
+            </select>
+            <select id="regionFilter">
+                <option value="">全部地区</option>
+                <option value="中国">中国</option>
+                <option value="美国">美国</option>
+                <option value="日本">日本</option>
+                <option value="韩国">韩国</option>
+            </select>
+            <select id="yearFilter">
+                <option value="">全部年份</option>
+            </select>
+            <select id="sortFilter">
+                <option value="created_at">最新发布</option>
+                <option value="rating">评分最高</option>
+                <option value="views">观看最多</option>
+                <option value="year">年份最新</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadMovies()">筛选</button>
+        </section>
+
+        <div class="movie-grid" id="movieList"></div>
+        <div class="pagination" id="pagination"></div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 家庭电影网站. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/movies.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 家庭电影网站</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🎬 家庭电影 - 管理后台</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">首页</a>
+                <a href="/admin.html" class="nav-link active">管理后台</a>
+                <button class="btn btn-primary" onclick="logout()">退出</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>管理后台</h1>
+        </div>
+
+        <div class="admin-tabs">
+            <button class="tab-btn active" onclick="switchAdminTab('stats')">数据统计</button>
+            <button class="tab-btn" onclick="switchAdminTab('movies')">电影管理</button>
+            <button class="tab-btn" onclick="switchAdminTab('users')">用户管理</button>
+            <button class="tab-btn" onclick="switchAdminTab('genres')">类型管理</button>
+        </div>
+
+        <!-- 数据统计 -->
+        <div id="statsTab" class="admin-tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>电影总数</h3>
+                    <p id="statsMovies">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>用户总数</h3>
+                    <p id="statsUsers">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>评论总数</h3>
+                    <p id="statsRates">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>收藏总数</h3>
+                    <p id="statsWishes">-</p>
+                </div>
+            </div>
+            <div class="section">
+                <h2>热门电影</h2>
+                <div id="popularMovies"></div>
+            </div>
+        </div>
+
+        <!-- 电影管理 -->
+        <div id="moviesTab" class="admin-tab-content" style="display:none;">
+            <div class="section">
+                <h2>添加电影</h2>
+                <form id="addMovieForm" onsubmit="addMovie(event)" class="card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>电影标题 *</label>
+                            <input type="text" id="movieTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label>导演 *</label>
+                            <input type="text" id="movieDirector" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>演员</label>
+                        <input type="text" id="movieActors" placeholder="用逗号分隔">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>类型</label>
+                            <select id="movieGenre"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>地区</label>
+                            <input type="text" id="movieRegion">
+                        </div>
+                        <div class="form-group">
+                            <label>年份</label>
+                            <input type="number" id="movieYear">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>剧情简介</label>
+                        <textarea id="movieDescription"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>海报URL</label>
+                        <input type="url" id="moviePoster">
+                    </div>
+                    <div class="form-group">
+                        <label>视频URL</label>
+                        <input type="url" id="movieVideoUrl">
+                    </div>
+                    <button type="submit" class="btn btn-primary">添加电影</button>
+                </form>
+            </div>
+            <div class="section">
+                <h2>电影列表</h2>
+                <div id="adminMovieList"></div>
+            </div>
+        </div>
+
+        <!-- 用户管理 -->
+        <div id="usersTab" class="admin-tab-content" style="display:none;">
+            <div class="section">
+                <h2>用户列表</h2>
+                <div id="adminUserList"></div>
+            </div>
+        </div>
+
+        <!-- 类型管理 -->
+        <div id="genresTab" class="admin-tab-content" style="display:none;">
+            <div class="section">
+                <h2>添加类型</h2>
+                <form id="addGenreForm" onsubmit="addGenre(event)" class="card">
+                    <div class="form-group">
+                        <label>类型名称 *</label>
+                        <input type="text" id="genreName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>类型描述</label>
+                        <textarea id="genreDescription"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">添加类型</button>
+                </form>
+            </div>
+            <div class="section">
+                <h2>类型列表</h2>
+                <div id="adminGenreList"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 家庭电影网站. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+</body>
+</html>
+
