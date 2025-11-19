@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
 
     // 关键词搜索（标题、导演、演员）
     if (keyword) {
-      sql += ' AND (m.title LIKE ? OR m.director LIKE ? OR m.actors LIKE ?)';
+      sql += ' AND (m.title LIKE ? OR director LIKE ? OR actors LIKE ?)';
       const keywordPattern = `%${keyword}%`;
       params.push(keywordPattern, keywordPattern, keywordPattern);
     }
@@ -56,9 +56,17 @@ router.get('/', async (req, res) => {
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     sql += ` ORDER BY m.${sortField} ${sortOrder}`;
 
-    // 分页
+    // ===== 调试：先看参数 =====
+    console.log('SQL :', sql);
+    console.log('Params before limit:', params, '| length:', params.length);
+sql += ' LIMIT ? OFFSET ?';
+    // 分页：强制洗值，保证只 push 2 个数字
+    const limitVal  = Math.max(1, parseInt(limit)  || 20);
+    const offsetVal = Math.max(0, parseInt(offset) || 0);
     sql += ' LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), parseInt(offset));
+    params.push(limitVal, offsetVal);
+
+    console.log('Params after limit :', params, '| length:', params.length);
 
     const movies = await query(sql, params);
 
@@ -78,7 +86,7 @@ router.get('/', async (req, res) => {
       countParams.push(year);
     }
     if (keyword) {
-      countSql += ' AND (m.title LIKE ? OR m.director LIKE ? OR m.actors LIKE ?)';
+      countSql += ' AND (m.title LIKE ? OR director LIKE ? OR actors LIKE ?)';
       const keywordPattern = `%${keyword}%`;
       countParams.push(keywordPattern, keywordPattern, keywordPattern);
     }
@@ -109,7 +117,6 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // 获取电影基本信息
     const sql = 'SELECT m.*, g.name as genre_name FROM movie m LEFT JOIN genre g ON m.genre_id = g.id WHERE m.id = ?';
     const movies = await query(sql, [id]);
 
@@ -122,13 +129,11 @@ router.get('/:id', async (req, res) => {
     // 增加观看次数
     await query('UPDATE movie SET views = views + 1 WHERE id = ?', [id]);
 
-    // 获取评分统计
     const ratingStats = await query(
       'SELECT AVG(rating) as avg_rating, COUNT(*) as rating_count FROM rate WHERE movie_id = ?',
       [id]
     );
 
-    // 获取最新评论（前10条）
     const comments = await query(
       `SELECT r.*, u.username, u.avatar 
        FROM rate r 
@@ -139,10 +144,9 @@ router.get('/:id', async (req, res) => {
       [id]
     );
 
-    // 获取推荐电影（同类型或同导演）
     const recommendations = await query(
       `SELECT m.* FROM movie m 
-       WHERE (m.genre_id = ? OR m.director = ?) AND m.id != ? 
+       WHERE (m.genre_id = ? OR director = ?) AND m.id != ? 
        ORDER BY m.rating DESC, m.views DESC 
        LIMIT 6`,
       [movie.genre_id, movie.director, id]
@@ -191,4 +195,3 @@ router.get('/hot/list', async (req, res) => {
 });
 
 module.exports = router;
-
