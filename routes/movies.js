@@ -59,7 +59,7 @@ router.get('/', async (req, res) => {
     // ===== 调试：先看参数 =====
     console.log('SQL :', sql);
     console.log('Params before limit:', params, '| length:', params.length);
-sql += ' LIMIT ? OFFSET ?';
+
     // 分页：强制洗值，保证只 push 2 个数字
     const limitVal  = Math.max(1, parseInt(limit)  || 20);
     const offsetVal = Math.max(0, parseInt(offset) || 0);
