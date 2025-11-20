@@ -1,3 +1,4 @@
+const { paginate } = require('../utils/paginate');
 /**
  * 电影相关API路由
  * 处理所有电影相关的请求
@@ -56,15 +57,14 @@ router.get('/', async (req, res) => {
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     sql += ` ORDER BY m.${sortField} ${sortOrder}`;
 
-    // ===== 调试：先看参数 =====
-    console.log('SQL :', sql);
-    console.log('Params before limit:', params, '| length:', params.length);
+    // ===== 统一分页 =====
+console.log('SQL :', sql);
+console.log('Params before limit:', params, '| length:', params.length);
 
-    // 分页：强制洗值，保证只 push 2 个数字
-    const limitVal  = Math.max(1, parseInt(limit)  || 20);
-    const offsetVal = Math.max(0, parseInt(offset) || 0);
-    sql += ' LIMIT ? OFFSET ?';
-    params.push(limitVal, offsetVal);
+const { sql: finalSql, params: finalParams } = paginate(sql, params, page, limit);
+
+console.log('最终SQL :', finalSql);
+console.log('最终参数:', finalParams);
 
     console.log('Params after limit :', params, '| length:', params.length);
 
