@@ -87,8 +87,10 @@ async function loadMovies(page = 1) {
 
 // 创建电影卡片
 function createMovieCard(movie) {
-  const poster = movie.poster || 'https://via.placeholder.com/200x300?text=No+Poster';
-  const rating = movie.rating ? movie.rating.toFixed(1) : '暂无评分';
+  const poster = movie.poster || 'https://img1.baidu.com/it/u=1946626161,1337772738&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=300';
+  const rating = (movie.rating != null && !isNaN(movie.rating))
+               ? Number(movie.rating).toFixed(1)
+               : '暂无评分';
   
   return `
     <div class="movie-card" onclick="goToMovieDetail(${movie.id})">

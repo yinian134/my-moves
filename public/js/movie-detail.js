@@ -51,7 +51,9 @@ async function loadMovieDetail() {
 function displayMovieDetail(movie) {
   const container = document.getElementById('movieDetail');
   const poster = movie.poster || 'https://via.placeholder.com/300x450?text=No+Poster';
-  const rating = movie.rating ? movie.rating.toFixed(1) : '暂无评分';
+  const rating = movie.rating != null && !isNaN(movie.rating)
+    ? Number(movie.rating).toFixed(1)
+    : '暂无评分';
   
   container.innerHTML = `
     <div class="movie-detail-header">
@@ -70,7 +72,6 @@ function displayMovieDetail(movie) {
         <p><strong>观看次数：</strong>${movie.views || 0}</p>
         <div class="movie-detail-actions">
           <button class="btn btn-primary" id="wishBtn" onclick="toggleWishlist()">添加到收藏</button>
-          ${movie.video_url ? `<button class="btn btn-primary" onclick="watchMovie('${movie.video_url}')">立即观看</button>` : ''}
         </div>
         <div style="margin-top:20px;">
           <h3>剧情简介</h3>
@@ -78,7 +79,121 @@ function displayMovieDetail(movie) {
         </div>
       </div>
     </div>
+    <div class="movie-player-section">
+      <h3>📺 在线观看</h3>
+      <div id="videoPlayerContainer">
+        ${renderVideoPlayer(movie)}
+      </div>
+    </div>
   `;
+
+  initializeVideoPlayer(movie);
+}
+
+function renderVideoPlayer(movie) {
+  const rawUrl = (movie.video_url || '').trim();
+
+  if (!rawUrl) {
+    return '<p class="player-empty">暂无播放源，请在后台上传或填写完整影片地址。</p>';
+  }
+
+  if (isYouTubeUrl(rawUrl)) {
+    const embedUrl = normalizeYouTubeUrl(rawUrl);
+    return `
+      <div class="video-iframe">
+        <iframe 
+          src="${escapeHtml(embedUrl)}" 
+          title="在线视频播放器"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <p class="player-tip">当前播放资源来自外部平台，如需完整正片，可在后台为该影片配置本地视频地址。</p>
+    `;
+  }
+
+  if (isHlsSource(rawUrl)) {
+    const playerId = getVideoElementId(movie.id);
+    const posterAttr = movie.poster ? ` poster="${escapeHtml(movie.poster)}"` : '';
+    return `<video id="${playerId}" class="movie-player" controls playsinline${posterAttr}></video>`;
+  }
+
+  const posterAttr = movie.poster ? ` poster="${escapeHtml(movie.poster)}"` : '';
+  const mimeType = getVideoMimeType(rawUrl);
+  const typeAttr = mimeType ? ` type="${mimeType}"` : '';
+
+  return `
+    <video class="movie-player" controls playsinline${posterAttr}>
+      <source src="${escapeHtml(rawUrl)}"${typeAttr}>
+      您的浏览器不支持 HTML5 视频播放，请尝试下载后观看。
+    </video>
+  `;
+}
+
+function initializeVideoPlayer(movie) {
+  const videoUrl = (movie.video_url || '').trim();
+  if (!videoUrl || !isHlsSource(videoUrl)) return;
+
+  const playerId = getVideoElementId(movie.id);
+  const videoElement = document.getElementById(playerId);
+  if (!videoElement) return;
+
+  if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+    videoElement.src = videoUrl;
+    return;
+  }
+
+  if (window.Hls && window.Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(videoUrl);
+    hls.attachMedia(videoElement);
+    return;
+  }
+
+  const fallback = document.createElement('p');
+  fallback.className = 'player-empty';
+  fallback.textContent = '当前浏览器不支持在线播放该视频，请更换支持HLS的浏览器或下载影片观看。';
+  videoElement.replaceWith(fallback);
+}
+
+function getVideoElementId(movieId) {
+  return `movie-player-${movieId || 'current'}`;
+}
+
+function isYouTubeUrl(url) {
+  return /youtube\.com|youtu\.be/.test(url);
+}
+
+function normalizeYouTubeUrl(url) {
+  if (url.includes('embed')) return url;
+  if (url.includes('watch?v=')) {
+    return url.replace('watch?v=', 'embed/');
+  }
+  if (url.includes('youtu.be/')) {
+    return url.replace('youtu.be/', 'www.youtube.com/embed/');
+  }
+  return url;
+}
+
+function isHlsSource(url) {
+  return /\.m3u8(\?.*)?$/i.test(url);
+}
+
+function getVideoMimeType(url) {
+  if (/\.mp4(\?.*)?$/i.test(url)) return 'video/mp4';
+  if (/\.webm(\?.*)?$/i.test(url)) return 'video/webm';
+  if (/\.ogg(\?.*)?$/i.test(url) || /\.ogv(\?.*)?$/i.test(url)) return 'video/ogg';
+  return '';
+}
+
+function escapeHtml(text) {
+  return text
+    ? text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+    : '';
 }
 
 // 加载评论
@@ -108,7 +223,7 @@ function createCommentItem(rate) {
       </div>
       <div class="comment-content">${rate.comment || '无评论内容'}</div>
       <div style="color:#999;font-size:0.9rem;margin-top:10px;">
-        ${new Date(rate.created_at).toLocaleString()}
+        ${rate.created_at ? new Date(rate.created_at).toLocaleString() : ''}
       </div>
     </div>
   `;
@@ -203,11 +318,6 @@ async function removeWishlist() {
   } catch (error) {
     console.error('取消收藏失败:', error);
   }
-}
-
-// 观看电影
-function watchMovie(videoUrl) {
-  window.open(videoUrl, '_blank');
 }
 
 // 创建电影卡片（用于推荐）

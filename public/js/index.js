@@ -93,7 +93,11 @@ async function loadMovies(page = 1) {
 // 创建电影卡片HTML
 function createMovieCard(movie) {
   const poster = movie.poster || 'https://via.placeholder.com/200x300?text=No+Poster';
-  const rating = movie.rating ? movie.rating.toFixed(1) : '暂无评分';
+  
+
+  const star = (movie.rating != null && !isNaN(movie.rating))
+  ? Number(movie.rating).toFixed(1)
+  : '0.0';
   
   return `
     <div class="movie-card" onclick="goToMovieDetail(${movie.id})">
@@ -102,7 +106,7 @@ function createMovieCard(movie) {
         <div class="movie-card-title">${movie.title}</div>
         <div class="movie-card-info">${movie.year || '未知年份'}</div>
         <div class="movie-card-info">${movie.director || '未知导演'}</div>
-        <div class="movie-card-rating">⭐ ${rating}</div>
+        <div class="movie-card-rating">⭐ ${star}</div>
       </div>
     </div>
   `;

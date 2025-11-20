@@ -22,7 +22,6 @@ router.get('/', async (req, res) => {
       keyword 
     } = req.query;
 
-    const offset = (page - 1) * limit;
     let sql = 'SELECT m.*, g.name as genre_name FROM movie m LEFT JOIN genre g ON m.genre_id = g.id WHERE 1=1';
     const params = [];
 
@@ -58,17 +57,14 @@ router.get('/', async (req, res) => {
     sql += ` ORDER BY m.${sortField} ${sortOrder}`;
 
     // ===== 统一分页 =====
-console.log('SQL :', sql);
-console.log('Params before limit:', params, '| length:', params.length);
+    const { sql: finalSql, params: finalParams } = paginate(sql, params, page, limit);
 
-const { sql: finalSql, params: finalParams } = paginate(sql, params, page, limit);
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('查询电影SQL:', finalSql);
+      console.log('查询电影参数:', finalParams);
+    }
 
-console.log('最终SQL :', finalSql);
-console.log('最终参数:', finalParams);
-
-    console.log('Params after limit :', params, '| length:', params.length);
-
-    const movies = await query(sql, params);
+    const movies = await query(finalSql, finalParams);
 
     // 获取总数
     let countSql = 'SELECT COUNT(*) as total FROM movie m WHERE 1=1';
@@ -112,7 +108,33 @@ console.log('最终参数:', finalParams);
   }
 });
 
-// 2. 获取电影详情
+// 2. 获取电影类型列表
+router.get('/genres/list', async (req, res) => {
+  try {
+    const genres = await query('SELECT * FROM genre ORDER BY name');
+    res.json({ success: true, data: genres });
+  } catch (error) {
+    console.error('获取类型列表错误:', error);
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+});
+
+// 3. 获取热门电影
+router.get('/hot/list', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const movies = await query(
+      'SELECT m.*, g.name as genre_name FROM movie m LEFT JOIN genre g ON m.genre_id = g.id ORDER BY m.views DESC, m.rating DESC LIMIT ?',
+      [limit]
+    );
+    res.json({ success: true, data: movies });
+  } catch (error) {
+    console.error('获取热门电影错误:', error);
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+});
+
+// 4. 获取电影详情
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -130,16 +152,21 @@ router.get('/:id', async (req, res) => {
     await query('UPDATE movie SET views = views + 1 WHERE id = ?', [id]);
 
     const ratingStats = await query(
-      'SELECT AVG(rating) as avg_rating, COUNT(*) as rating_count FROM rate WHERE movie_id = ?',
+      'SELECT AVG(score) as avg_rating, COUNT(*) as rating_count FROM rate WHERE movieId = ?',
       [id]
     );
 
     const comments = await query(
-      `SELECT r.*, u.username, u.avatar 
+      `SELECT 
+         r.id,
+         r.shortComment AS comment,
+         r.score AS rating,
+         NULL AS created_at,
+         u.username
        FROM rate r 
-       LEFT JOIN user u ON r.user_id = u.id 
-       WHERE r.movie_id = ? AND r.comment IS NOT NULL 
-       ORDER BY r.created_at DESC 
+       LEFT JOIN user u ON r.userId = u.id 
+       WHERE r.movieId = ? AND r.shortComment IS NOT NULL 
+       ORDER BY r.id DESC 
        LIMIT 10`,
       [id]
     );
@@ -164,32 +191,6 @@ router.get('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('获取电影详情错误:', error);
-    res.status(500).json({ success: false, message: '服务器错误' });
-  }
-});
-
-// 3. 获取电影类型列表
-router.get('/genres/list', async (req, res) => {
-  try {
-    const genres = await query('SELECT * FROM genre ORDER BY name');
-    res.json({ success: true, data: genres });
-  } catch (error) {
-    console.error('获取类型列表错误:', error);
-    res.status(500).json({ success: false, message: '服务器错误' });
-  }
-});
-
-// 4. 获取热门电影
-router.get('/hot/list', async (req, res) => {
-  try {
-    const { limit = 10 } = req.query;
-    const movies = await query(
-      'SELECT m.*, g.name as genre_name FROM movie m LEFT JOIN genre g ON m.genre_id = g.id ORDER BY m.views DESC, m.rating DESC LIMIT ?',
-      [limit]
-    );
-    res.json({ success: true, data: movies });
-  } catch (error) {
-    console.error('获取热门电影错误:', error);
     res.status(500).json({ success: false, message: '服务器错误' });
   }
 });
