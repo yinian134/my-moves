@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
@@ -90,13 +90,9 @@ router.post('/login', async (req, res) => {
 
     // 生成JWT token
     const token = jwt.sign(
-      { 
-        userId: user.id, 
-        username: user.username, 
-        role: user.role 
-      },
-      'your-secret-key-change-this-in-production',
-      { expiresIn: '7d' } // token有效期7天
+      { userId: user.id, username: user.username, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE }
     );
 
     // 不返回密码
@@ -207,3 +203,4 @@ router.get('/wishlist', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+ 
