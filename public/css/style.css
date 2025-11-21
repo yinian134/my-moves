@@ -437,6 +437,43 @@ body {
     border-radius: 4px;
 }
 
+/* 播放器错误和加载提示 */
+.player-error {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.player-loading {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.player-empty {
+    background: #e9ecef;
+    border-radius: 8px;
+    padding: 40px;
+    margin: 20px 0;
+    text-align: center;
+    color: #6c757d;
+}
+
+.player-tip {
+    margin-top: 10px;
+    padding: 10px;
+    background: #e7f3ff;
+    border-left: 4px solid #2196F3;
+    border-radius: 4px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
 /* 统计卡片 */
 .stats-grid {
     display: grid;

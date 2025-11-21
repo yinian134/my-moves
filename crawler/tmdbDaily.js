@@ -34,13 +34,16 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
       const trailer = yt ? `https://www.youtube.com/embed/${yt.key}` : null;
 
       // 3. 写库（ON DUPLICATE KEY UPDATE 防重）
+      // 注意：只写入trailer，video_url留空，等待管理员上传正片
       await conn.execute(`
         INSERT INTO movie (
           imdb_id, title, director, actors, region, year, duration,
-          description, poster, trailer, video_url, rating, views, status,
+          description, poster, trailer, video_url, video_type, rating, views, status,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,  NOW(), NOW())
-        ON DUPLICATE KEY UPDATE updated_at = NOW()
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE 
+          updated_at = NOW(),
+          trailer = COALESCE(VALUES(trailer), trailer)
       `, [
         detail.data.imdb_id || null,
         m.title,
@@ -52,8 +55,9 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
         detail.data.runtime || 0,
         detail.data.overview || '',
         poster,
-        trailer,
-        trailer,               // 预告片直接当 video_url 用
+        trailer,              // 只写入预告片
+        NULL,                 // video_url 留空，等待管理员上传
+        'external',           // 预告片类型为external
         m.vote_average || 0,
         0,
         'active'

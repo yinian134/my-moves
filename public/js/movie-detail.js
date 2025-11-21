@@ -132,7 +132,24 @@ function renderVideoPlayer(movie) {
 
 function initializeVideoPlayer(movie) {
   const videoUrl = (movie.video_url || '').trim();
-  if (!videoUrl || !isHlsSource(videoUrl)) return;
+  if (!videoUrl || !isHlsSource(videoUrl)) {
+    // 为非HLS视频添加错误处理
+    if (videoUrl && !isYouTubeUrl(videoUrl)) {
+      const videoElements = document.querySelectorAll('.movie-player');
+      videoElements.forEach(video => {
+        video.addEventListener('error', (e) => {
+          handleVideoError(e, video, videoUrl);
+        });
+        video.addEventListener('loadstart', () => {
+          showLoadingMessage(video);
+        });
+        video.addEventListener('canplay', () => {
+          hideLoadingMessage(video);
+        });
+      });
+    }
+    return;
+  }
 
   const playerId = getVideoElementId(movie.id);
   const videoElement = document.getElementById(playerId);
@@ -140,13 +157,40 @@ function initializeVideoPlayer(movie) {
 
   if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
     videoElement.src = videoUrl;
+    videoElement.addEventListener('error', (e) => handleVideoError(e, videoElement, videoUrl));
     return;
   }
 
   if (window.Hls && window.Hls.isSupported()) {
-    const hls = new Hls();
+    const hls = new Hls({
+      enableWorker: true,
+      lowLatencyMode: false
+    });
+    
     hls.loadSource(videoUrl);
     hls.attachMedia(videoElement);
+    
+    // HLS错误处理
+    hls.on(Hls.Events.ERROR, (event, data) => {
+      if (data.fatal) {
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            showPlayerError(videoElement, '网络错误，无法加载视频。请检查网络连接或稍后重试。');
+            hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            showPlayerError(videoElement, '视频格式错误或文件损坏。');
+            hls.recoverMediaError();
+            break;
+          default:
+            showPlayerError(videoElement, '播放器错误，请刷新页面重试。');
+            hls.destroy();
+            break;
+        }
+      }
+    });
+    
+    videoElement.addEventListener('error', (e) => handleVideoError(e, videoElement, videoUrl));
     return;
   }
 
@@ -194,6 +238,70 @@ function escapeHtml(text) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
     : '';
+}
+
+// 处理视频播放错误
+function handleVideoError(event, videoElement, videoUrl) {
+  const error = videoElement.error;
+  let errorMessage = '视频加载失败';
+  
+  if (error) {
+    switch (error.code) {
+      case error.MEDIA_ERR_ABORTED:
+        errorMessage = '视频加载被中止，请重试';
+        break;
+      case error.MEDIA_ERR_NETWORK:
+        errorMessage = '网络错误，无法加载视频。请检查网络连接';
+        break;
+      case error.MEDIA_ERR_DECODE:
+        errorMessage = '视频解码失败，文件可能已损坏';
+        break;
+      case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+        errorMessage = '不支持的视频格式或视频源不可用';
+        break;
+      default:
+        errorMessage = '视频播放出错，请刷新页面重试';
+    }
+  }
+  
+  showPlayerError(videoElement, errorMessage, videoUrl);
+}
+
+// 显示播放器错误
+function showPlayerError(videoElement, message, videoUrl = null) {
+  const container = videoElement.parentElement;
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'player-error';
+  errorDiv.innerHTML = `
+    <p style="color: #e74c3c; font-weight: bold; margin-bottom: 10px;">⚠️ ${message}</p>
+    ${videoUrl ? `<p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">视频地址: <code>${escapeHtml(videoUrl)}</code></p>` : ''}
+    <button class="btn btn-primary" onclick="location.reload()" style="margin-right: 10px;">刷新页面</button>
+    ${videoUrl && !videoUrl.includes('youtube.com') ? `<a href="${escapeHtml(videoUrl)}" class="btn btn-primary" download>下载视频</a>` : ''}
+  `;
+  
+  videoElement.style.display = 'none';
+  container.appendChild(errorDiv);
+}
+
+// 显示加载提示
+function showLoadingMessage(videoElement) {
+  const container = videoElement.parentElement;
+  let loadingDiv = container.querySelector('.player-loading');
+  if (!loadingDiv) {
+    loadingDiv = document.createElement('div');
+    loadingDiv.className = 'player-loading';
+    loadingDiv.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">正在加载视频...</p>';
+    container.insertBefore(loadingDiv, videoElement);
+  }
+}
+
+// 隐藏加载提示
+function hideLoadingMessage(videoElement) {
+  const container = videoElement.parentElement;
+  const loadingDiv = container.querySelector('.player-loading');
+  if (loadingDiv) {
+    loadingDiv.remove();
+  }
 }
 
 // 加载评论
