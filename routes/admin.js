@@ -135,11 +135,16 @@ router.post('/genres', async (req, res) => {
   }
 });
 
-// 5. 获取用户列表
+// 5. 获取用户列表（admin）
 router.get('/users', async (req, res) => {
   try {
-    const { page = 1, limit = 20, role } = req.query;
+    // 先洗值（防空字符串 & NaN）
+    const rawPage  = req.query.page  || 1;
+    const rawLimit = req.query.limit || 20;
+    const page  = Math.max(1, parseInt(rawPage)  || 1);
+    const limit = Math.max(1, parseInt(rawLimit) || 20);
     const offset = (page - 1) * limit;
+    const role = req.query.role || null;
 
     let sql = 'SELECT id, username, email, phone, role, created_at FROM user WHERE 1=1';
     const params = [];
@@ -150,7 +155,7 @@ router.get('/users', async (req, res) => {
     }
 
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), parseInt(offset));
+    params.push(limit, offset);   // 保证是数字
 
     const users = await query(sql, params);
 
@@ -162,8 +167,8 @@ router.get('/users', async (req, res) => {
       data: {
         users,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page,
+          limit,
           total,
           totalPages: Math.ceil(total / limit)
         }
@@ -171,7 +176,7 @@ router.get('/users', async (req, res) => {
     });
   } catch (error) {
     console.error('获取用户列表错误:', error);
-    res.status(500).json({ success: false, message: '服务器错误' });
+    res.status(500).json({ success: false, message: '服务器内部错误' });
   }
 });
 
@@ -186,7 +191,7 @@ router.get('/stats', async (req, res) => {
     const [popularMovies] = await query(
       'SELECT title, views, rating FROM movie ORDER BY views DESC LIMIT 5'
     );
-
+    
     res.json({
       success: true,
       data: {
@@ -194,14 +199,14 @@ router.get('/stats', async (req, res) => {
         users: userCount.total,
         rates: rateCount.total,
         wishes: wishCount.total,
-        popularMovies
+        popularMovies: Array.isArray(popularMovies) ? popularMovies : []   // ← 防御
       }
+    
     });
   } catch (error) {
     console.error('获取统计数据错误:', error);
-    res.status(500).json({ success: false, message: '服务器错误' });
+    res.status(500).json({ success: false, message: '服务器内部错误' });
   }
 });
 
 module.exports = router;
-
